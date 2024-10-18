@@ -4,7 +4,7 @@ import com.springboot.webclient_blip_api.api.exception.NotificationException;
 import com.springboot.webclient_blip_api.model.dto.*;
 import com.springboot.webclient_blip_api.model.service.ContatoService;
 import com.springboot.webclient_blip_api.utils.PaginationUtils;
-import jakarta.servlet.http.HttpSession;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -24,9 +24,8 @@ public class ContatoServiceImpl implements ContatoService {
     private final WebClient webClient;
 
     @Override
-    public Page<ContatoDTO> buscarContatosPaginados(PostRequestDTO<ContatoDTO> postRequest, HttpSession session) {
+    public Page<ContatoDTO> buscarContatosPaginados(PostRequestDTO<ContatoDTO> postRequest, KeyDTO key) {
 
-        KeyDTO key = (KeyDTO) session.getAttribute("key");
 
         if (Objects.isNull(key)) {
             throw new NotificationException("Usuário não autenticado!");
@@ -62,16 +61,11 @@ public class ContatoServiceImpl implements ContatoService {
     }
 
     @Override
-    public ResponseDTO buscarHistoricoContato(IdentityContatoDTO dto, HttpSession session) {
-
-        KeyDTO key = (KeyDTO) session.getAttribute("key");
+    public ResponseDTO buscarHistoricoContato(String id, KeyDTO key) {
 
         if (Objects.isNull(key)) {
             throw new NotificationException("Usuário não autenticado!");
         }
-
-
-        String contatoId = dto.getIdentity();
 
         String requestBody = String.format(
                 """
@@ -82,7 +76,7 @@ public class ContatoServiceImpl implements ContatoService {
                         }
                         """,
                 UUID.randomUUID().toString(),
-                contatoId
+                id
         );
 
 

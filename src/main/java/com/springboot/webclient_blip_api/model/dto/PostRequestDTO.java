@@ -13,4 +13,5 @@ public class PostRequestDTO<T> implements Serializable {
     private Integer page = 1;
     private List<SortColumn> sortColumns = new ArrayList<>();
     private T filters;
+    private KeyDTO key;
 }

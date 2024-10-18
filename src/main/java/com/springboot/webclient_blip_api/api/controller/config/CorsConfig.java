@@ -8,13 +8,17 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class CorsConfig {
-
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(@NotNull CorsRegistry registry) {
-                registry.addMapping("/**").allowedOrigins("*").allowedMethods("*");
+                registry.addMapping("/**")
+                        .allowedOriginPatterns("http://localhost:3000", "http://localhost:3000/contatos")
+                        .allowedMethods("POST")
+                        .allowCredentials(true)
+                        .allowedHeaders("*")
+                        .exposedHeaders("Authorization");
             }
         };
     }
