@@ -1,4 +1,4 @@
-package com.springboot.webclient_blip_api.webclient;
+package com.springboot.webclient_blip_api.api.controller.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

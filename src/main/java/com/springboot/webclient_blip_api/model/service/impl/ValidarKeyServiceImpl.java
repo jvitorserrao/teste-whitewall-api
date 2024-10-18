@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.Objects;
+
 
 @Service
 @RequiredArgsConstructor
@@ -17,10 +19,9 @@ public class ValidarKeyServiceImpl implements ValidarKeyService {
     @Override
     public Boolean validarKey(KeyDTO key) {
 
-        if (key.getKey().isEmpty()) {
+        if(Objects.isNull(key)) {
             return false;
         }
-
         try {
             String requestBody =
                     """
@@ -40,7 +41,7 @@ public class ValidarKeyServiceImpl implements ValidarKeyService {
                     .bodyToMono(String.class)
                     .block();
 
-            return response != null && !response.isEmpty();
+            return Objects.nonNull(response) && !response.isEmpty();
         } catch (Exception e) {
             return false;
         }

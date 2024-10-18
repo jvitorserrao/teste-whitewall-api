@@ -1,14 +1,20 @@
 package com.springboot.webclient_blip_api.model.service.impl;
 
 import com.springboot.webclient_blip_api.api.exception.NotificationException;
-import com.springboot.webclient_blip_api.model.dto.ContatoDTO;
-import com.springboot.webclient_blip_api.model.dto.KeyDTO;
+import com.springboot.webclient_blip_api.model.dto.*;
 import com.springboot.webclient_blip_api.model.service.ContatoService;
+import com.springboot.webclient_blip_api.utils.PaginationUtils;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 
 @Service
@@ -18,16 +24,16 @@ public class ContatoServiceImpl implements ContatoService {
     private final WebClient webClient;
 
     @Override
-    public ContatoDTO buscarContatosPaginados(ContatoDTO dto, HttpSession session) {
+    public Page<ContatoDTO> buscarContatosPaginados(PostRequestDTO<ContatoDTO> postRequest, HttpSession session) {
 
         KeyDTO key = (KeyDTO) session.getAttribute("key");
 
-        if (key == null) {
+        if (Objects.isNull(key)) {
             throw new NotificationException("Usuário não autenticado!");
         }
 
         String requestBody =
-                       """
+                """
                         {
                            "id": "{{$guid}}",
                            "to": "postmaster@crm.msging.net",
@@ -35,14 +41,58 @@ public class ContatoServiceImpl implements ContatoService {
                            "uri": "/contacts?$skip=0&$take=3"
                         }
                         """;
-         webClient.post()
+        ResponseDTO response = webClient.post()
                 .uri("/commands")
                 .header("Authorization", key.getKey())
                 .header("Content-Type", "application/json")
                 .bodyValue(requestBody)
                 .retrieve()
-                .bodyToMono(String.class)
+                .bodyToMono(ResponseDTO.class)
                 .block();
-         return dto;
+
+        if (Objects.isNull(response) || Objects.isNull(response.getResource()) || response.getResource().getItems().isEmpty()) {
+            throw new NotificationException("Nenhum contato encontrado!");
+        }
+
+        List<ContatoDTO> contatosList = response.getResource().getItems();
+
+        Pageable pageable = PaginationUtils.applyPagination(postRequest);
+        return new PageImpl<>(contatosList, pageable, response.getResource().getTotal());
+
+    }
+
+    @Override
+    public ResponseDTO buscarHistoricoContato(IdentityContatoDTO dto, HttpSession session) {
+
+        KeyDTO key = (KeyDTO) session.getAttribute("key");
+
+        if (Objects.isNull(key)) {
+            throw new NotificationException("Usuário não autenticado!");
+        }
+
+
+        String contatoId = dto.getIdentity();
+
+        String requestBody = String.format(
+                """
+                        {
+                           "id": "%s",
+                           "method": "get",
+                           "uri": "/threads/%s"
+                        }
+                        """,
+                UUID.randomUUID().toString(),
+                contatoId
+        );
+
+
+        return webClient.post()
+                .uri("/commands")
+                .header("Authorization", key.getKey())
+                .header("Content-Type", "application/json")
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(ResponseDTO.class)
+                .block();
     }
 }
