@@ -15,11 +15,12 @@ public class CorsConfig {
             public void addCorsMappings(@NotNull CorsRegistry registry) {
                 registry.addMapping("/**")
                         .allowedOriginPatterns("http://localhost:3000", "http://localhost:3000/contatos")
-                        .allowedMethods("POST")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowCredentials(true)
                         .allowedHeaders("*")
                         .exposedHeaders("Authorization");
             }
         };
     }
+
 }

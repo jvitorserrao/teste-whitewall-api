@@ -7,6 +7,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping(value = "/contato")
 @RequiredArgsConstructor
@@ -14,19 +16,16 @@ public class ContatoController {
 
     private final ContatoService contatoService;
 
-    @PostMapping("/listar")
-    public PostResponseDTO<ContatoDTO> buscarSolicitacoesDashboardGealog(@RequestBody PostRequestDTO<ContatoDTO> request) {
+    @PostMapping
+    public PostResponseDTO<ContatoDTO> buscarContatosPaginados(@RequestBody PostRequestDTO<ContatoDTO> request) {
         KeyDTO key = request.getKey();
         Page<ContatoDTO> listarContatos = contatoService.buscarContatosPaginados(request, key);
         return new PostResponseDTO<>(listarContatos);
     }
 
-    @PostMapping("/historico/{id}")
-    public ResponseEntity<ResponseDTO> buscarHistoricoContato(@RequestParam String id, @RequestBody PostRequestDTO<ContatoDTO> request) {
-        KeyDTO key = request.getKey();
-
-            ResponseDTO responseDTO = contatoService.buscarHistoricoContato(id, key);
-            return ResponseEntity.ok(responseDTO);
-
+    @GetMapping("/{id}")
+    public ResponseEntity<List<ComentariosContatoDTO>> buscarComentariosContato(@PathVariable String id, @RequestParam KeyDTO key) {
+        List<ComentariosContatoDTO> comentarios = contatoService.buscarComentariosContato(id, key);
+        return ResponseEntity.ok(comentarios);
     }
 }
