@@ -28,4 +28,10 @@ public class ContatoController {
         List<ComentariosContatoDTO> comentarios = contatoService.buscarComentariosContato(id, key);
         return ResponseEntity.ok(comentarios);
     }
+
+    @PostMapping("/adicionar-comentario/{id}")
+    public ResponseEntity<TextComentarioDTO> adicionarComentario(@PathVariable String id, @RequestBody TextComentarioDTO request, @RequestParam KeyDTO key) {
+        TextComentarioDTO comentarioDTO = contatoService.adicionarComentarios(id, request, key);
+        return ResponseEntity.ok(comentarioDTO);
+    }
 }

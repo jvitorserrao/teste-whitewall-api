@@ -10,4 +10,5 @@ public interface ContatoService {
 
     Page<ContatoDTO> buscarContatosPaginados(PostRequestDTO<ContatoDTO> postRequest, KeyDTO key);
     List<ComentariosContatoDTO> buscarComentariosContato(String id, KeyDTO key);
+    TextComentarioDTO adicionarComentarios(String id, TextComentarioDTO request, KeyDTO key);
 }

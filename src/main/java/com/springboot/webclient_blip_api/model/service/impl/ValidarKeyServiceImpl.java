@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 
@@ -23,20 +25,17 @@ public class ValidarKeyServiceImpl implements ValidarKeyService {
             return false;
         }
         try {
-            String requestBody =
-                    """
-                    {
-                        "id": "{{guid}}",
-                        "to": "postmaster@msging.net",
-                        "method": "get",
-                        "uri": "/delegations/postmaster@broadcast.msging.net?envelopeTypes=message"
-                    }
-                    """;
+            Map<String, Object> resource = new HashMap<>();
+            resource.put("id", "{{guid}}");
+            resource.put("to", "postmaster@msging.net");
+            resource.put("method", "get");
+            resource.put("uri", "/delegations/postmaster@broadcast.msging.net?envelopeTypes=message");
+
             String response = webClient.post()
                     .uri("/commands")
                     .header("Authorization", key.getKey())
                     .header("Content-Type", "application/json")
-                    .bodyValue(requestBody)
+                    .bodyValue(resource)
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();

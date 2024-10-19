@@ -1,5 +1,6 @@
 package com.springboot.webclient_blip_api.model.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.springboot.webclient_blip_api.api.exception.NotificationException;
 import com.springboot.webclient_blip_api.model.dto.*;
 import com.springboot.webclient_blip_api.model.service.ContatoService;
@@ -13,10 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -34,20 +32,17 @@ public class ContatoServiceImpl implements ContatoService {
             throw new NotificationException("Usuário não autenticado!");
         }
 
-        String requestBody =
-                """
-                        {
-                           "id": "{{$guid}}",
-                           "to": "postmaster@crm.msging.net",
-                           "method": "get",
-                           "uri": "/contacts?$skip=0&$take=100"
-                        }
-                        """;
+        Map<String, Object> resource = new HashMap<>();
+        resource.put("id", UUID.randomUUID().toString());
+        resource.put("to", "postmaster@crm.msging.net");
+        resource.put("method", "get");
+        resource.put("uri", "/contacts?$skip=0&$take=100");
+
         ResponseDTO response = webClient.post()
                 .uri("/commands")
                 .header("Authorization", key.getKey())
                 .header("Content-Type", "application/json")
-                .bodyValue(requestBody)
+                .bodyValue(resource)
                 .retrieve()
                 .bodyToMono(ResponseDTO.class)
                 .block();
@@ -69,24 +64,18 @@ public class ContatoServiceImpl implements ContatoService {
             throw new NotificationException("Usuário não autenticado!");
         }
 
-        String requestBody = String.format(
-                """
-                        {
-                            "id": "%s",
-                            "to": "postmaster@crm.msging.net",
-                            "method": "get",
-                            "uri": "/contacts/%s/comments"
-                        }
-                        """,
-                UUID.randomUUID().toString(),
-                id
-        );
+        Map<String, Object> resource = new HashMap<>();
+        resource.put("id", UUID.randomUUID().toString());
+        resource.put("to", "postmaster@crm.msging.net");
+        resource.put("method", "get");
+        resource.put("uri", String.format("/contacts/%s/comments", id));
+
 
         Map<String, Object> response = webClient.post()
                 .uri("/commands")
                 .header("Authorization", key.getKey())
                 .header("Content-Type", "application/json")
-                .bodyValue(requestBody)
+                .bodyValue(resource)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
                 })
@@ -108,5 +97,48 @@ public class ContatoServiceImpl implements ContatoService {
                         (String) item.get("content")
                 ))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public TextComentarioDTO adicionarComentarios(String id, TextComentarioDTO request, KeyDTO key) {
+        if (Objects.isNull(key)) {
+            throw new NotificationException("Usuário não autenticado!");
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        Map<String, Object> resource = new HashMap<>();
+        resource.put("content", request.getTexto());
+
+        Map<String, Object> requestBodyMap = new HashMap<>();
+        requestBodyMap.put("id", "{{$guid}}");
+        requestBodyMap.put("to", "postmaster@crm.msging.net");
+        requestBodyMap.put("method", "set");
+        requestBodyMap.put("uri", "/contacts/" + id + "/comments");
+        requestBodyMap.put("type", "application/vnd.iris.crm.comment+json");
+        requestBodyMap.put("resource", resource);
+
+        String requestBody;
+        try {
+            requestBody = objectMapper.writeValueAsString(requestBodyMap);
+        } catch (Exception e) {
+            throw new NotificationException("Erro ao criar o corpo da requisição: " + e.getMessage());
+        }
+
+        try {
+            return webClient.post()
+                    .uri("/commands")
+                    .header("Authorization", key.getKey())
+                    .header("Content-Type", "application/json")
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
+                        throw new NotificationException("Erro na requisição: " + clientResponse.statusCode());
+                    })
+                    .bodyToMono(TextComentarioDTO.class)
+                    .block();
+        } catch (Exception e) {
+            throw new NotificationException("Erro ao adicionar comentário: " + e.getMessage());
+        }
     }
 }
